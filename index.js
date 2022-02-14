@@ -2,7 +2,7 @@ const express = require("express");
 var path = require("path");
 
 const app = express();
-const port = process.env.PORT || 8080;
+const port = 8085;
 
 app.use(express.static(path.join(__dirname, "/public")));
 
@@ -11,9 +11,7 @@ app.get("/login", function (req, res) {
 });
 
 app.get("*", (req, res) => {
-	// Here user can also design an
-	// error page and render it
-	res.send("PAGE INTROUVABLE - 404");
+	res.sendFile(path.join(__dirname + "/views/404.html"));
 });
 
 app.listen(port, () => {
