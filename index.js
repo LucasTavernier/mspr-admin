@@ -13,7 +13,7 @@ var config = {
 
 //On a le droit à 5 requêtes en 1 minute, sinon on est bloqué 1 minute
 const limiter = rateLimit({
-	max: 5,
+	max: 10,
 	windowMs: 1 * 60 * 1000,
 	message: "Trop de requête depuis cette ip",
 });
@@ -28,6 +28,7 @@ app.use(
 		secret: "secret",
 		resave: true,
 		saveUninitialized: true,
+		loggedin: false,
 	})
 );
 
@@ -36,7 +37,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(limiter);
 
 app.get("/", function (req, res) {
-	res.sendFile(path.join(__dirname + "/views/login.html"));
+	console.log(req.session);
+	if (req.session.loggedin) {
+		res.send("CONNECTE");
+	} else {
+		res.sendFile(path.join(__dirname + "/views/login.html"));
+	}
 });
 
 app.get("/doubleAuth", function (req, res) {
@@ -45,6 +51,16 @@ app.get("/doubleAuth", function (req, res) {
 
 app.get("/confirm", (req, res) => {
 	res.sendFile(path.join(__dirname + "/views/confirm.html"));
+});
+
+app.get("/confirm/:id", (req, res) => {
+	let id = req.params.id;
+
+	if (req.session.uuid == id) {
+		req.session.loggedin = true;
+	}
+
+	res.redirect("/");
 });
 
 app.post("/auth", function (req, res) {
@@ -58,11 +74,12 @@ app.post("/auth", function (req, res) {
 		}
 		if (auth) {
 			console.log("Connecté !");
-			res.status(200).end();
+			res.status(200);
 			res.redirect("/doubleAuth");
 		} else {
 			console.log("Connexion ratée !");
-			res.status(403).end();
+			res.status(403);
+			res.redirect("/doubleAuth");
 		}
 	});
 });
@@ -70,7 +87,7 @@ app.post("/auth", function (req, res) {
 app.post("/doubleAuth", function (req, res) {
 	let mail = req.body.email;
 
-	sendMail(mail, function (err, sended) {
+	sendMail(mail, req.session, function (err, sended) {
 		if (err) {
 			console.log("ERROR: " + JSON.stringify(err));
 			res.status(500);
