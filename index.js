@@ -79,7 +79,6 @@ app.post("/auth", function (req, res) {
 		} else {
 			console.log("Connexion ratée !");
 			res.status(403);
-			res.redirect("/doubleAuth");
 		}
 	});
 });
