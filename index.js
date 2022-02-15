@@ -26,8 +26,17 @@ app.use(express.static(path.join(__dirname, "/public")));
 app.use(express.urlencoded({ extended: true }));
 app.use(limiter);
 
+
 app.get("/", function (req, res) {
 	res.sendFile(path.join(__dirname + "/views/login.html"));
+});
+
+app.get("/login", function(req, res) {
+    res.sendFile(path.join(__dirname + "/views/login.html"));
+});
+
+app.get("/confirm", (req, res) => {
+    res.sendFile(path.join(__dirname + "/views/confirm.html"));
 });
 
 app.post("/auth", function (req, res) {
@@ -52,6 +61,7 @@ app.get("*", (req, res) => {
 	res.sendFile(path.join(__dirname + "/views/404.html"));
 });
 
+
 app.listen(port, () => {
-	console.log(`Serveur sur le port ${port}`);
-});
+    console.log(`Serveur sur le port ${port}`);
+})
