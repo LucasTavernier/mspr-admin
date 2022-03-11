@@ -12,12 +12,18 @@ let transporter = nodemailer.createTransport({
 });
 
 module.exports = function sendMail(mail, session, callback) {
+    if (session.ipDiff == true) {
+        textAlert = "d'une nouvelle adresse IP"
+    }
+    if (session.navigateurDiff == true) {
+        textAlert = "d'un nouveau navigateur"
+    }
 
     message = {
         from: email,
         to: mail,
         subject: "CONNEXION SUSPECTE",
-        html: "<h1>Attention,</h1><p>Une connexion suspecte a été détectée à partir d'une nouvelle adresse IP.",
+        html: "<h1>Attention,</h1><p>Une connexion suspecte a été détectée à partir" + textAlert
     };
 
     transporter.sendMail(message, function(err, info) {

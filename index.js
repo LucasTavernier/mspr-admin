@@ -1,11 +1,16 @@
+// import publicIp from 'public-ip';
+
 const mysql = require("mysql");
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
+const externalip = require("externalip");
 const ActiveDirectory = require("activedirectory");
 const rateLimit = require("express-rate-limit");
 const sendMail = require("./email");
 const sendMailAlert = require("./emailAlert");
+const axios = require("axios").default;
+
 
 var config = {
     url: "ldap://mspr-admin.local",
@@ -40,43 +45,58 @@ app.use(express.urlencoded({ extended: true }));
 app.use(limiter);
 
 app.get("/", function(req, res) {
+    var os = require('os');
+    var ifaces = os.networkInterfaces();
+    for (var dev in ifaces) {
+        var alias = 0;
+        ifaces[dev].forEach(function(details) {
+            if (details.family == 'IPv4') {
+                IPDetectee = (dev + (alias ? ':' + alias : ''), details.address);
+                ++alias;
+            }
+        });
+    }
+    // publicIp.v4().then(ip => {
+    //     res.send("your public ip address", ip);
+    // });
+    // res.send(req.headers['user-agent'])
+    // res.send(ipAddress);
+    // externalip(function(err, ip) {
+    //     res.send(ip); // => 8.8.8.8
+    // });
+    if (IPDetectee != "mettre ip de bdd ici") {
+
+    }
+    axios.get("https://ipapi.co/json/")
+        .then(function(response) {
+            var country = response.data["country_name"]
+            console.log(country)
+            var ip = response.data["ip"]
+            console.log(ip)
+                // res.send(country)
+        })
+        .catch(function(error) {
+            console.error(error)
+        });
+
+
+    // getDonnees();
+    // function getDonnees() {
+    //     return axios.get(url).then(reponse => reponse.data)
+    // }
     //If ip etrangere:
     //res.send("IP étrangère détectée, authentification interdite");
     console.log(req.session);
     if (req.session.loggedin) {
         res.send("CONNECTE");
-        //si le navigateur est different: 
-        if (req.headers['user-agent'] != "mettre ip de bdd ici") {
+        //si le navigateur est different ou si l'ip est diff: 
+        if (req.headers['user-agent'] != "mettre navigateur de bdd ici") {
             req.session.navigateurDiff = true;
-            let mail = req.body.email;
-
-            sendMailAlert(mail, req.session, function(err, sended) {
-                if (err) {
-                    console.log("ERROR: " + JSON.stringify(err));
-                    res.status(500);
-                }
-                console.log(sended);
-                if (sended) {
-                    res.status(200).end();
-                } else {
-                    res.status(400).end();
-                }
-            });
         }
-        var os = require('os');
-        var ifaces = os.networkInterfaces();
-        for (var dev in ifaces) {
-            var alias = 0;
-            ifaces[dev].forEach(function(details) {
-                if (details.family == 'IPv4') {
-                    IPDetectee = (dev + (alias ? ':' + alias : ''), details.address);
-                    ++alias;
-                }
-            });
-        }
-        //si l'ip est differente: 
         if (IPDetectee != "mettre ip de bdd ici") {
             req.session.ipDiff = true;
+        }
+        if (req.headers['user-agent'] != "mettre navigateur de bdd ici" || IPDetectee != "mettre ip de bdd ici") {
             let mail = req.body.email;
 
             sendMailAlert(mail, req.session, function(err, sended) {
