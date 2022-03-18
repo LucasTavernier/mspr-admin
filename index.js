@@ -45,6 +45,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(limiter);
 
 app.get("/", function(req, res) {
+    var country = "test"
     var os = require('os');
     var ifaces = os.networkInterfaces();
     for (var dev in ifaces) {
@@ -67,25 +68,39 @@ app.get("/", function(req, res) {
     if (IPDetectee != "mettre ip de bdd ici") {
 
     }
-    axios.get("https://ipapi.co/json/")
-        .then(function(response) {
-            var country = response.data["country_name"]
-            console.log(country)
-            var ip = response.data["ip"]
-            console.log(ip)
-                // res.send(country)
-        })
-        .catch(function(error) {
-            console.error(error)
-        });
+    // axios.get("https://ipapi.co/json/")
+    //     .then(function(response) {
+    //         const country = response.data["country_name"]
+    //         console.log(country)
+    //         const ip = response.data["ip"]
+    //         console.log(ip)
+    //         res.send(country)
+    //         updateCountry(country)
+    //         Set({ country: country })
+    //         country = country
+    //     })
+    //     .catch(function(error) {
+    //         console.error(error)
+    //     });
 
+    // function updateCountry(country) {
+    //     var country = country
+    //     res.send(country)
+    //     console.log("test : " +
+    //         country)
+    // }
+    // res.send(country)
+    // axios.get.res.send(
 
+    //     )
     // getDonnees();
     // function getDonnees() {
     //     return axios.get(url).then(reponse => reponse.data)
     // }
     //If ip etrangere:
     //res.send("IP étrangère détectée, authentification interdite");
+    // res.sendFile(path.join(__dirname + "/views/interdit.html"));
+    // res.sendFile(path.join(__dirname + "/views/connecte.html"));
     console.log(req.session);
     if (req.session.loggedin) {
         res.send("CONNECTE");
