@@ -7,6 +7,12 @@ a.button {
 }
 
 body {
-    font-family: sans-serif;
     text-align: center;
+    color: black;
+    font-family: sans-serif;
+    padding-top: 40px;
+}
+
+h2 {
+    margin-bottom: 50px;
 }
