@@ -79,6 +79,7 @@ app.get("/confirm/:id", (req, res) => {
 
 	if (req.session.uuid == id) {
 		req.session.loggedin = true;
+		let nav = req.headers['user-agent'];
 
 		db.connect(function(err) {
 			if (err) throw err;
@@ -90,9 +91,50 @@ app.get("/confirm/:id", (req, res) => {
 					'SET mail = ?',
 					[req.session.mail]
 				);
+
+				textMaybeError = "";
+				if(result[0].nav != nav){
+					textMaybeError += "Attention, une connexion suspecte a été détecté à partir" + 
+					" d'un nouveau navigateur ["+nav+"], l'habituel étant ["+result[0].nav+"].";
+				}
+				if(result[0].ip != ip.data['ip']){
+					if(textMaybeError != ""){
+						textMaybeError +="<br>De plus, une nouvelle ip a été détectée ["+ip.data['ip']+"], l'habituel étant ["+result[0].ip+"]."
+					}else{
+						textMaybeError += "Attention, une connexion suspecte a été détecté à partir" + 
+					"d'une nouvelle ip ["+ip.data['ip']+"], l'habituel étant ["+result[0].ip+"].";
+					}
+				}
+
+				if(textMaybeError != ""){
+					sendMail(result[0].mail, req.session, function (err, sended) {
+						if (err) {
+							console.log("ERROR: " + JSON.stringify(err));
+							res.status(500);
+						}
+						console.log(sended);
+						if (sended) {
+							req.session.mail = mail;
+							req.session.uuid = numUnique;
+							res.status(200).end();
+						} else {
+							res.status(400).end();
+						}
+					}, 
+					"ATTENTION CONNEXION SUSPECTE",
+					textMaybeError
+					);
 			  }
-			});
-		  });
+			}else{
+				db.query (
+					'INSERT INTO users '+
+					'SET login = ?, nav = ?, ip = ?',
+					[req.session.login,nav, ip.data["ip"]]
+				);
+			  }
+			}
+		);
+		});
 	}
 
 	res.redirect("/");
@@ -111,58 +153,8 @@ app.post("/auth", function (req, res) {
 		if (auth) {
 			console.log("Connecté !");
 			res.status(200);
-			
-			let nav = req.headers['user-agent'];
 
 			req.session.login = username;
-			db.connect(function(err) {
-				if (err) throw err;
-				db.query("SELECT * FROM users WHERE login ='" + username+"'", function (err, result, fields) {
-				  if (err) throw err;
-				  if(result.length > 0){ //si l'utilisateur existe
-					textMaybeError = "";
-					if(result[0].nav != nav){
-						textMaybeError += "Attention, une connexion suspecte a été détecté à partir" + 
-						" d'un nouveau navigateur ["+nav+"], l'habituel étant ["+result[0].nav+"].";
-					}
-					if(result[0].ip != ip.data['ip']){
-						if(textMaybeError != ""){
-							textMaybeError +="<br>De plus, une nouvelle ip a été détectée ["+ip.data['ip']+"], l'habituel étant ["+result[0].ip+"]."
-						}else{
-							textMaybeError += "Attention, une connexion suspecte a été détecté à partir" + 
-						"d'une nouvelle ip ["+ip.data['ip']+"], l'habituel étant ["+result[0].ip+"].";
-						}
-					}
-
-					if(textMaybeError != ""){
-						sendMail(result[0].mail, req.session, function (err, sended) {
-							if (err) {
-								console.log("ERROR: " + JSON.stringify(err));
-								res.status(500);
-							}
-							console.log(sended);
-							if (sended) {
-								req.session.mail = mail;
-								req.session.uuid = numUnique;
-								res.status(200).end();
-							} else {
-								res.status(400).end();
-							}
-						}, 
-						"ATTENTION CONNEXION SUSPECTE",
-						textMaybeError
-						);
-					}
-
-				  }else{
-					db.query (
-						'INSERT INTO users '+
-						'SET login = ?, nav = ?, ip = ?',
-						[username,nav, ip.data["ip"]]
-					);
-				  }
-				});
-			  });
 
 			res.redirect("/doubleAuth");
 		} else {
@@ -185,9 +177,9 @@ app.post("/doubleAuth", function (req, res) {
 		if (sended) {
 			req.session.mail = mail;
 			req.session.uuid = numUnique;
-			res.status(200).end();
+			res.status(200).end("Un mail a ete envoye a :" + mail);
 		} else {
-			res.status(400).end();
+			res.status(400).end("Impossible d'envoyer le mail a : " + mail);
 		}
 	}, 
 	"DOUBLE AUTHENTIFICATION",
