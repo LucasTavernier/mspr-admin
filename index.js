@@ -66,8 +66,39 @@ app.get("/", function (req, res) {
 	}
 });
 
+app.get("/deconnexion", function(req, res){
+	if (req.session) {
+		req.session.destroy();
+	}
+	res.redirect("/");
+})
+
+app.get("/username", function(req, res){
+	res.send(""+req.session.login);
+});
+
 app.get("/doubleAuth", function (req, res) {
 	res.sendFile(path.join(__dirname + "/views/doubleAuth.html"));
+});
+
+app.get("/changeIp/:ip", (req, res) =>{
+	let ip = req.params.ip;
+
+	if(req.session.loggedin){
+		db.connect(function(err) {
+			if (err) throw err;
+			db.query("SELECT * FROM users WHERE login ='" + req.session.login+"'", function (err, result, fields) {
+			  if (err) throw err;
+			  	if(result.length > 0){ //si l'utilisateur existe
+					db.query (
+						"UPDATE users SET ip = ? WHERE login ='"+req.session.login + "'", 
+						[ip]
+					);
+				}
+			});
+		});
+		res.status(200).end("Votre ip a bien ete change !");
+	}
 });
 
 app.get("/confirm", (req, res) => {
@@ -87,8 +118,7 @@ app.get("/confirm/:id", (req, res) => {
 			  if (err) throw err;
 			  if(result.length > 0){ //si l'utilisateur existe
 				db.query (
-					'UPDATE users '+
-					'SET mail = ?',
+					"UPDATE users SET mail = ? WHERE login ='"+req.session.login + "'", 
 					[req.session.mail]
 				);
 
@@ -102,7 +132,8 @@ app.get("/confirm/:id", (req, res) => {
 						textMaybeError +="<br>De plus, une nouvelle ip a été détectée ["+ip.data['ip']+"], l'habituel étant ["+result[0].ip+"]."
 					}else{
 						textMaybeError += "Attention, une connexion suspecte a été détecté à partir" + 
-					"d'une nouvelle ip ["+ip.data['ip']+"], l'habituel étant ["+result[0].ip+"].";
+					" d'une nouvelle ip ["+ip.data['ip']+"], l'habituel étant ["+result[0].ip+"].";
+					textMaybeError += "<br> <a href='http://localhost/changeIp/" + ip.data['ip'] + "'>Changer mon adresse ip habituelle</a>"
 					}
 				}
 
